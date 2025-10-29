@@ -1,5 +1,9 @@
 # obsidian-utils
 
+
+# Мой телеграм канал
+https://t.me/+4zHj_20Zmo43ZmVi
+
 # Зависимости
 ```
 pip install watchdog
