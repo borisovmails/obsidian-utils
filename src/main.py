@@ -11,6 +11,7 @@ from logging.handlers import TimedRotatingFileHandler
 from datetime import datetime, timedelta
 from pathlib import Path
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 from jinja2 import Environment, BaseLoader
 
@@ -50,7 +51,7 @@ task_pattern_close = u'- [x]'
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', 'your_bot_token_here')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', 'your_chat_id_here')
 TIMEZONE = os.getenv('TIMEZONE', 'Europe/Samara')
-DURATION_TOMATO = os.getenv('TIMEZONE', 30)
+DURATION_TOMATO = int(os.getenv('TIMEZONE', 30))
 
 
 timezone = pytz.timezone(TIMEZONE)
@@ -140,14 +141,15 @@ def parse_obsidian_task(s: str, filename: str = "") -> dict:
                 ret['notification'] = notification
                 data = data.replace(f"(@{notification})", '')
 
-        ret['duration'] = "0"
         if '[🍅' in data:
             match_duration = re.search(r"\[🍅::(?P<duration>\d+)\]", data)
             if match_duration:
-                duration = (match_duration.group('duration'))
+                duration = int(match_duration.group('duration'))
                 ret['duration'] = duration * DURATION_TOMATO
                 # Удаляем помидорку из текста
                 data = re.sub(r'\s*\[🍅::\d+\]\s*', ' ', data)
+        else:
+            ret['duration'] = 0
 
         # Очищаем лишние пробелы
         data = re.sub(r'\s+', ' ', data).strip()
@@ -413,7 +415,7 @@ def start_sync_monitoring(source_dir):
 
     # Запуск мониторинга
     event_handler = SyncHandler(source_dir)
-    observer = Observer()
+    observer = PollingObserver()
     observer.schedule(event_handler, source_dir, recursive=True)
 
     observer.start()
